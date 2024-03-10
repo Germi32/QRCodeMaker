@@ -36,10 +36,13 @@ def generate_qr(data):
 
 
 def copy(entry):
-    w32cl.OpenClipboard()
-    w32cl.EmptyClipboard()
-    w32cl.SetClipboardData(w32cl.CF_UNICODETEXT, entry.selection_get())
-    w32cl.CloseClipboard()
+    try:
+        w32cl.OpenClipboard()
+        w32cl.EmptyClipboard()
+        w32cl.SetClipboardData(w32cl.CF_UNICODETEXT, entry.selection_get())
+        w32cl.CloseClipboard()
+    except tk.TclError:
+        pass
 
 
 def paste(entry):
