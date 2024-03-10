@@ -14,7 +14,7 @@ def delete_temp_file(temp_file):
         if os.path.exists(temp_file):
             os.remove(temp_file)
     except Exception as e:
-        print(e)
+        pass
 
 
 def generate_qr(data):
@@ -35,6 +35,20 @@ def generate_qr(data):
     return temp_img_file_path, file_to_remove
 
 
+def copy(entry):
+    w32cl.OpenClipboard()
+    w32cl.EmptyClipboard()
+    w32cl.SetClipboardData(w32cl.CF_UNICODETEXT, entry.selection_get())
+    w32cl.CloseClipboard()
+
+
+def paste(entry):
+    try:
+        entry.insert(tk.END, entry.clipboard_get())
+    except tk.TclError:
+        pass
+
+
 class App(ttk.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,14 +63,20 @@ class App(ttk.Window):
         self.header = ttk.Frame(self)
 
         self.url_label = ttk.Label(self.header, text="URL:")
+
         self.url_entry = ttk.Entry(self.header)
+        self.url_entry.bind("<Button-3>", self.show_menu)
+        self.menu = tk.Menu(self, tearoff=0)
+        self.menu.add_command(label="Copy          (Ctrl+C)", command=lambda: copy(self.url_entry))
+        self.menu.add_command(label="Paste          (Ctrl+V)", command=lambda: paste(self.url_entry))
+
         self.btn_generate = ttk.Button(self.header, text="Generate", command=self.insert_qr,
                                        bootstyle=(ttk.SUCCESS, ttk.OUTLINE))
 
         self.image = ttk.PhotoImage(file=self.qr)
         self.img = ttk.Label(self, image=self.image)
 
-        self.btn_copy = ttk.Button(self, text="Copy to clipboard", command=self.copy_to_clipboard,
+        self.btn_copy = ttk.Button(self, text="Copy to clipboard", command=self.copy_qr_to_clipboard,
                                    bootstyle=ttk.LIGHT)
         # Grid config
         self.rowconfigure(0, weight=1)
@@ -86,7 +106,7 @@ class App(ttk.Window):
         self.img.configure(image=self.image)
         delete_temp_file(to_delete)
 
-    def copy_to_clipboard(self):
+    def copy_qr_to_clipboard(self):
         image = Image.open(self.qr)
 
         output = BytesIO()
@@ -98,6 +118,9 @@ class App(ttk.Window):
         w32cl.EmptyClipboard()
         w32cl.SetClipboardData(w32cl.CF_DIB, data)
         w32cl.CloseClipboard()
+
+    def show_menu(self, event):
+        self.menu.post(event.x_root, event.y_root)
 
     def dark_title_bar(self):
         DARK_MODE = 20  # Rendering policy attribute
